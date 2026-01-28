@@ -8,12 +8,40 @@ import java.sql.SQLException;
 
 import model.CustomerBean;
 
-public class CustomerDAOJdbc {
+public class CustomerDAOJdbc implements CustomerDAO {
 	private static final String URL = "jdbc:mysql://localhost:3306/java";
 	private static final String USERNAME = "root";
 	private static final String PASSWORD = "123456";
 	private static final String SELECT_BY_PK = "select * from customer where custid = ?";
-
+	private static final String UPDATE = "update customer set password=?, email=?, birth=? where custid=?";
+	
+	@Override
+	public CustomerBean update(byte[] password, 
+			String email, java.util.Date birth, String custid) {
+		CustomerBean result = null;
+				try (Connection conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+						PreparedStatement stmt = conn.prepareStatement(UPDATE)) {
+					stmt.setBytes(1, password);
+					stmt.setString(2, email);
+					if(birth != null) {
+						long time = birth.getTime();
+						stmt.setDate(3, new java.sql.Date(time));
+					} else {
+						stmt.setDate(3, null);
+					}
+					stmt.setString(4, custid);
+					
+					int i = stmt.executeUpdate();
+					if(i == 1) {
+						return this.select(custid);
+					}
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+				return result;
+	}
+	
+	@Override
 	public CustomerBean select(String custid) {
 		CustomerBean result = null;
 		/*
